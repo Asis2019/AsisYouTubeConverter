@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">YouTube Converter</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="version_message">Version: %s</string>
+    <string name="video_link">Video Link</string>
+    <string name="download">Download</string>
+    <string name="download_complete">Download Complete</string>
+    <string name="download_failed">Download Failed</string>
+    <string name="starting_download">Starting Download</string>
+    <string name="settings">Settings</string>
+    <string name="general">General</string>
+    <string name="version">Version</string>
+    <string name="download_folder">Download Folder</string>
+    <string name="download_preference_summery">Where the downloaded files will be saved</string>
+    <string name="drawer_description">Welcome to Asis\'s YouTube to MP3 Converter app</string>
+    <string name="drawer_image_description">App icon image</string>
+    <string name="storage">Storage</string>
+</resources>
