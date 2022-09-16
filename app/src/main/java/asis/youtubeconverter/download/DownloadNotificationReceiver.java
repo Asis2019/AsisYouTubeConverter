@@ -13,7 +13,7 @@ public class DownloadNotificationReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Bundle bundle = intent.getExtras();
+        cancelNotification(context, bundle.getInt("service_id"));
         YoutubeDL.getInstance().destroyProcessById(bundle.getString("video_url"));
-        cancelNotification(context, bundle.getInt("notification_id"));
     }
 }

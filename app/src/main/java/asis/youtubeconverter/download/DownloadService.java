@@ -86,16 +86,15 @@ public class DownloadService extends Service {
 
     private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId) {
         //Variables
-        final String[] videoTitle = {"Downloading"};
+        final String[] videoTitle = {"Initializing Download"};
 
         Intent intent = new Intent(getApplicationContext(), DownloadNotificationReceiver.class);
         intent.putExtra("video_url", url);
-        intent.putExtra("notification_id", serviceId);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), serviceId, intent, PendingIntent.FLAG_IMMUTABLE);
+        intent.putExtra("service_id", serviceId);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), serviceId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder notification = getNotificationBuilder(getApplicationContext(), videoTitle[0], 0, true)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(url))
-                .addAction(R.drawable.ic_download, getText(android.R.string.cancel), pendingIntent);
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(url));
 
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH);
         startForeground(serviceId, notification.build());
@@ -105,8 +104,7 @@ public class DownloadService extends Service {
             notification
                     .setContentTitle(videoTitle[0])
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(line))
-                    .setProgress(100, (int) progress, isIndeterminate)
-                    .build();
+                    .setProgress(100, (int) progress, isIndeterminate);
             updateNotification(notification.build(), serviceId, getApplicationContext());
         };
 
@@ -116,10 +114,11 @@ public class DownloadService extends Service {
                 YoutubeDL.getInstance().init(this);
                 FFmpeg.getInstance().init(this);
 
-                if (!BuildConfig.DEBUG) {
-                    VideoInfo streamInfo = YoutubeDL.getInstance().getInfo(url);
-                    videoTitle[0] = streamInfo.getTitle();
-                }
+                VideoInfo streamInfo = YoutubeDL.getInstance().getInfo(request);
+                videoTitle[0] = streamInfo.getTitle();
+
+                notification.addAction(R.drawable.ic_download, getText(android.R.string.cancel), pendingIntent);
+                updateNotification(notification.build(), serviceId, getApplicationContext());
 
                 YoutubeDL.getInstance().execute(request, url, callback);
             } catch (YoutubeDLException | InterruptedException e) {
