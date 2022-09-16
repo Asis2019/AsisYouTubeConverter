@@ -86,7 +86,7 @@ public class DownloadService extends Service {
 
     private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId) {
         //Variables
-        final String[] videoTitle = {"Initializing Download"};
+        final String[] videoTitle = {getString(R.string.download_notification_title)};
 
         Intent intent = new Intent(getApplicationContext(), DownloadNotificationReceiver.class);
         intent.putExtra("video_url", url);
@@ -114,11 +114,9 @@ public class DownloadService extends Service {
                 YoutubeDL.getInstance().init(this);
                 FFmpeg.getInstance().init(this);
 
-                VideoInfo streamInfo = YoutubeDL.getInstance().getInfo(request);
+                VideoInfo streamInfo = YoutubeDL.getInstance().getInfo(url);
                 videoTitle[0] = streamInfo.getTitle();
-
                 notification.addAction(R.drawable.ic_download, getText(android.R.string.cancel), pendingIntent);
-                updateNotification(notification.build(), serviceId, getApplicationContext());
 
                 YoutubeDL.getInstance().execute(request, url, callback);
             } catch (YoutubeDLException | InterruptedException e) {
@@ -126,7 +124,7 @@ public class DownloadService extends Service {
 
                 if (e.getMessage() != null && !e.getMessage().isEmpty()) {
                     Intent broadcastIntent = new Intent(getApplicationContext(), ErrorBroadcastReceiver.class);
-                    broadcastIntent.putExtra("error_message", "An error occurred while attempting to download");
+                    broadcastIntent.putExtra("error_message", getString(R.string.download_error));
                     sendBroadcast(broadcastIntent);
                 }
             } finally {

@@ -16,4 +16,7 @@
     <string name="drawer_description">Welcome to Asis\'s YouTube to MP3 Converter app</string>
     <string name="drawer_image_description">App icon image</string>
     <string name="storage">Storage</string>
+    <string name="url_required">A video link is required</string>
+    <string name="download_error">An error occurred while attempting to convert video</string>
+    <string name="download_notification_title">Initializing Download</string>
 </resources>

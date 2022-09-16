@@ -23,6 +23,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 
 import asis.youtubeconverter.download.DownloadService;
@@ -110,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void download() {
         String url = editTextVideoUrl.getText().toString().trim();
         if (TextUtils.isEmpty(url)) {
-            editTextVideoUrl.setError("URL is required");
+            Snackbar.make(editTextVideoUrl, R.string.url_required, Snackbar.LENGTH_SHORT).show();
             return;
         }
 
