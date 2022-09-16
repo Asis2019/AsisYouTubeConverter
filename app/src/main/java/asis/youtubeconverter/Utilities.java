@@ -10,7 +10,7 @@ import androidx.preference.PreferenceManager;
 
 import java.io.File;
 
-class Utilities {
+public class Utilities {
     @NonNull
     public static File getDownloadLocation(Context context) {
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);

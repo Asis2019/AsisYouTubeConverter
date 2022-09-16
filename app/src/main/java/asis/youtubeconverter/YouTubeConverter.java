@@ -5,22 +5,12 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 
-import com.yausername.ffmpeg.FFmpeg;
-import com.yausername.youtubedl_android.YoutubeDL;
-import com.yausername.youtubedl_android.YoutubeDLException;
+import asis.youtubeconverter.download.DownloadNotificationService;
 
 public class YouTubeConverter extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        try {
-            YoutubeDL.getInstance().init(this);
-            FFmpeg.getInstance().init(this);
-        } catch (YoutubeDLException e) {
-            e.printStackTrace();
-        }
-
         NotificationChannel notificationChannel = new NotificationChannel(
                 DownloadNotificationService.DOWNLOAD_CHANNEL_ID,
                 "Downloads",

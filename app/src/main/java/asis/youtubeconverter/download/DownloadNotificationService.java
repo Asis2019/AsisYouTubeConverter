@@ -1,4 +1,4 @@
-package asis.youtubeconverter;
+package asis.youtubeconverter.download;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -7,7 +7,9 @@ import android.content.Context;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
-class DownloadNotificationService {
+import asis.youtubeconverter.R;
+
+public class DownloadNotificationService {
     public static final String DOWNLOAD_CHANNEL_ID = "download_channel";
 
     public static NotificationCompat.Builder getNotificationBuilder(Context context, String videoTitle, int progress, boolean indeterminate) {

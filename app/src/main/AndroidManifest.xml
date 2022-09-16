@@ -22,8 +22,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -39,8 +41,10 @@
                 android:value="asis.youtubeconverter.MainActivity" />
         </activity>
 
-        <service android:name=".DownloadService" />
-        <receiver android:name=".DownloadNotificationReceiver" />
+        <service android:name=".download.DownloadService" />
+
+        <receiver android:name=".download.DownloadNotificationReceiver" />
+        <receiver android:name=".download.ErrorBroadcastReceiver" />
     </application>
 
 </manifest>
