@@ -1,7 +1,6 @@
 package asis.youtubeconverter.download;
 
 import static asis.youtubeconverter.Utilities.getDownloadLocationString;
-import static asis.youtubeconverter.download.DownloadNotificationService.cancelNotification;
 import static asis.youtubeconverter.download.DownloadNotificationService.getNotificationBuilder;
 import static asis.youtubeconverter.download.DownloadNotificationService.updateNotification;
 
@@ -9,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -56,6 +56,18 @@ public class DownloadService extends Service {
         return null;
     }
 
+    @Override
+    public void onDestroy() {
+        Log.e("SERVICE", "onDestroy");
+        super.onDestroy();
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        Log.e("SERVICE", "onTaskRemoved");
+        super.onTaskRemoved(rootIntent);
+    }
+
     public static int getID() {
         return c.incrementAndGet();
     }
@@ -76,7 +88,6 @@ public class DownloadService extends Service {
         if (this.activeServiceId == serviceId) {
             stopForeground(true);
         }
-        cancelNotification(getApplicationContext(), serviceId);
         activeServiceIds.remove(Integer.valueOf(serviceId));
 
         if (activeServiceIds.isEmpty()) {
@@ -110,6 +121,8 @@ public class DownloadService extends Service {
 
         //Thread code
         Thread thread = new Thread(() -> {
+            NotificationCompat.Builder notificationThreadComplete = getNotificationBuilder(getApplicationContext(), videoTitle[0], 0, false);
+
             try {
                 YoutubeDL.getInstance().init(this);
                 FFmpeg.getInstance().init(this);
@@ -119,15 +132,33 @@ public class DownloadService extends Service {
                 notification.addAction(R.drawable.ic_download, getText(android.R.string.cancel), pendingIntent);
 
                 YoutubeDL.getInstance().execute(request, url, callback);
+
+                notificationThreadComplete
+                        .setContentTitle(videoTitle[0])
+                        .setSmallIcon(R.drawable.ic_done)
+                        .setContentText(getString(R.string.download_complete));
             } catch (YoutubeDLException | InterruptedException e) {
                 if (BuildConfig.DEBUG) e.printStackTrace();
 
+                notificationThreadComplete
+                        .setContentTitle(url)
+                        .setSmallIcon(R.drawable.ic_close);
                 if (e.getMessage() != null && !e.getMessage().isEmpty()) {
                     Intent broadcastIntent = new Intent(getApplicationContext(), ErrorBroadcastReceiver.class);
                     broadcastIntent.putExtra("error_message", getString(R.string.download_error));
                     sendBroadcast(broadcastIntent);
+
+                    notificationThreadComplete.setContentText(getString(R.string.download_failed));
+                } else if (e.getMessage() != null && e.getMessage().isEmpty()) {
+                    notificationThreadComplete.setContentText(getString(R.string.download_canceled));
                 }
             } finally {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH);
+                notificationThreadComplete
+                        .setProgress(0, 0, false)
+                        .setOngoing(false)
+                        .setSilent(false);
+                updateNotification(notificationThreadComplete.build(), serviceId, getApplicationContext());
                 cleanUp(serviceId);
             }
         });

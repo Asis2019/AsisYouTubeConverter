@@ -4,10 +4,6 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="version_message">Version: %s</string>
     <string name="video_link">Video Link</string>
-    <string name="download">Download</string>
-    <string name="download_complete">Download Complete</string>
-    <string name="download_failed">Download Failed</string>
-    <string name="starting_download">Starting Download</string>
     <string name="settings">Settings</string>
     <string name="general">General</string>
     <string name="version">Version</string>
@@ -19,4 +15,9 @@
     <string name="url_required">A video link is required</string>
     <string name="download_error">An error occurred while attempting to convert video</string>
     <string name="download_notification_title">Initializing Download</string>
+    <string name="download">Download</string>
+    <string name="download_complete">Download Complete</string>
+    <string name="download_failed">Download Failed</string>
+    <string name="starting_download">Starting Download</string>
+    <string name="download_canceled">Download Canceled</string>
 </resources>
