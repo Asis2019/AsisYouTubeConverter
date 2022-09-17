@@ -17,4 +17,4 @@ src="https://lh3.googleusercontent.com/drive-viewer/AJc5JmSUteqCzOEURUBJRnQDBqQW
 alt="Settings" />
 
 ## Installation
-To install the app, goto the <a href="https://github.com/Asis2019/AsisYouTubeConverter/releases" >releases</a> page and download the appropriet apk for your phone
+To install the app, goto the <a href="https://github.com/Asis2019/AsisYouTubeConverter/releases" >releases</a> page and download the appropriate apk for your phone

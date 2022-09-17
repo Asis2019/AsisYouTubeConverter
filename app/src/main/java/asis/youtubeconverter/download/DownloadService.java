@@ -29,6 +29,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -69,25 +70,25 @@ public class DownloadService extends Service {
     private void download(String url, int serviceId) {
         YoutubeDLRequest request = new YoutubeDLRequest(url);
 
-        File tmpFile;
+        File tmpFolder;
         try {
-            tmpFile = File.createTempFile("AYTC", null, getCacheDir());
-            tmpFile.delete();
-            tmpFile.mkdir();
-            tmpFile.deleteOnExit();
+            tmpFolder = File.createTempFile("AYTC", null, getCacheDir());
+            tmpFolder.delete();
+            tmpFolder.mkdir();
+            tmpFolder.deleteOnExit();
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
 
         request.addOption("--no-mtime");
-        request.addOption("-o", tmpFile.getAbsolutePath() + "/%(title)s.%(ext)s");
+        request.addOption("-o", tmpFolder.getAbsolutePath() + "/%(title)s.%(ext)s");
         request.addOption("-f", "ba");
         request.addOption("-x");
         request.addOption("--audio-format", "mp3");
         request.addOption("--audio-quality", "0");
 
-        createAndRunDownloadTask(request, url, serviceId, tmpFile);
+        createAndRunDownloadTask(request, url, serviceId, tmpFolder);
     }
 
     private void cleanUp(int serviceId, File tmpFile) {
@@ -107,7 +108,7 @@ public class DownloadService extends Service {
         }
     }
 
-    private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId, File tmpFile) {
+    private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId, File tmpFolder) {
         //Variables
         final String[] videoTitle = {getString(R.string.download_notification_title)};
 
@@ -150,7 +151,7 @@ public class DownloadService extends Service {
                         .setSmallIcon(R.drawable.ic_done)
                         .setContentText(getString(R.string.download_complete));
 
-                moveDownloadedFile(tmpFile);
+                moveDownloadedFile(tmpFolder);
             } catch (YoutubeDLException | InterruptedException e) {
                 if (BuildConfig.DEBUG) e.printStackTrace();
 
@@ -173,52 +174,52 @@ public class DownloadService extends Service {
                         .setOngoing(false)
                         .setSilent(false);
                 updateNotification(notificationThreadComplete.build(), serviceId, getApplicationContext());
-                cleanUp(serviceId, tmpFile);
+                cleanUp(serviceId, tmpFolder);
             }
         });
         thread.start();
     }
 
-    private void moveDownloadedFile(File tmpFile) {
+    private void moveDownloadedFile(File tmpFolder) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String downloadDir = sharedPreferences.getString("download_folder", null);
 
-        if (downloadDir != null) {
-            Uri treeUri = Uri.parse(downloadDir);
-            String docId = DocumentsContract.getTreeDocumentId(treeUri);
-            Uri destDir = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+        File[] files = tmpFolder.listFiles();
+        if (files == null) return;
 
-            for (File file : tmpFile.listFiles()) {
-                try {
-                    Uri destUri = DocumentsContract.createDocument(
-                            getApplicationContext().getContentResolver(),
-                            destDir,
-                            "*/*",
-                            file.getName()
-                    );
-
-                    FileInputStream ins = new FileInputStream(file);
-                    OutputStream ops = getApplicationContext().getContentResolver().openOutputStream(destUri);
-
-                    IOUtils.copy(ins, ops);
-                    IOUtils.closeQuietly(ops);
-                    IOUtils.closeQuietly(ins);
-                } catch (IOException ignore) {}
-            }
-            return;
-        }
-
-        for (File file : tmpFile.listFiles()) {
+        for (File file : files) {
             try {
                 FileInputStream ins = new FileInputStream(file);
+                OutputStream ops;
 
-                File finalFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), file.getName());
-                FileOutputStream ops = new FileOutputStream(finalFile);
+                if (downloadDir != null) {
+                    ops = getOutputStream(downloadDir, file);
+                } else {
+                    File finalFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), file.getName());
+                    ops = new FileOutputStream(finalFile);
+                }
 
                 IOUtils.copy(ins, ops);
                 IOUtils.closeQuietly(ops);
                 IOUtils.closeQuietly(ins);
-            } catch (IOException ignore) {}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    private OutputStream getOutputStream(String downloadDirUri, File file) throws FileNotFoundException {
+        Uri treeUri = Uri.parse(downloadDirUri);
+        String docId = DocumentsContract.getTreeDocumentId(treeUri);
+        Uri destDir = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+
+        Uri destUri = DocumentsContract.createDocument(
+                getApplicationContext().getContentResolver(),
+                destDir,
+                "*/*",
+                file.getName()
+        );
+
+        return getApplicationContext().getContentResolver().openOutputStream(destUri);
     }
 }
