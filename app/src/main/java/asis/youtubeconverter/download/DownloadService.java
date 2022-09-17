@@ -1,18 +1,21 @@
 package asis.youtubeconverter.download;
 
-import static asis.youtubeconverter.Utilities.getDownloadLocationString;
 import static asis.youtubeconverter.download.DownloadNotificationService.getNotificationBuilder;
 import static asis.youtubeconverter.download.DownloadNotificationService.updateNotification;
 
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
-import android.util.Log;
+import android.provider.DocumentsContract;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
+import androidx.preference.PreferenceManager;
 
 import com.yausername.ffmpeg.FFmpeg;
 import com.yausername.youtubedl_android.DownloadProgressCallback;
@@ -21,6 +24,14 @@ import com.yausername.youtubedl_android.YoutubeDLException;
 import com.yausername.youtubedl_android.YoutubeDLRequest;
 import com.yausername.youtubedl_android.mapper.VideoInfo;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,11 +42,6 @@ public class DownloadService extends Service {
     private int activeServiceId;
     private final ArrayList<Integer> activeServiceIds = new ArrayList<>();
     private static final AtomicInteger c = new AtomicInteger(0);
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -56,35 +62,41 @@ public class DownloadService extends Service {
         return null;
     }
 
-    @Override
-    public void onDestroy() {
-        Log.e("SERVICE", "onDestroy");
-        super.onDestroy();
-    }
-
-    @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        Log.e("SERVICE", "onTaskRemoved");
-        super.onTaskRemoved(rootIntent);
-    }
-
     public static int getID() {
         return c.incrementAndGet();
     }
 
     private void download(String url, int serviceId) {
         YoutubeDLRequest request = new YoutubeDLRequest(url);
+
+        File tmpFile;
+        try {
+            tmpFile = File.createTempFile("AYTC", null, getCacheDir());
+            tmpFile.delete();
+            tmpFile.mkdir();
+            tmpFile.deleteOnExit();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
         request.addOption("--no-mtime");
-        request.addOption("-o", getDownloadLocationString(this) + "/%(title)s.%(ext)s");
+        request.addOption("-o", tmpFile.getAbsolutePath() + "/%(title)s.%(ext)s");
         request.addOption("-f", "ba");
         request.addOption("-x");
         request.addOption("--audio-format", "mp3");
         request.addOption("--audio-quality", "0");
 
-        createAndRunDownloadTask(request, url, serviceId);
+        createAndRunDownloadTask(request, url, serviceId, tmpFile);
     }
 
-    private void cleanUp(int serviceId) {
+    private void cleanUp(int serviceId, File tmpFile) {
+        try {
+            FileUtils.deleteDirectory(tmpFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         if (this.activeServiceId == serviceId) {
             stopForeground(true);
         }
@@ -95,14 +107,14 @@ public class DownloadService extends Service {
         }
     }
 
-    private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId) {
+    private void createAndRunDownloadTask(YoutubeDLRequest request, String url, int serviceId, File tmpFile) {
         //Variables
         final String[] videoTitle = {getString(R.string.download_notification_title)};
 
         Intent intent = new Intent(getApplicationContext(), DownloadNotificationReceiver.class);
         intent.putExtra("video_url", url);
         intent.putExtra("service_id", serviceId);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), serviceId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, serviceId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder notification = getNotificationBuilder(getApplicationContext(), videoTitle[0], 0, true)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(url));
@@ -137,6 +149,8 @@ public class DownloadService extends Service {
                         .setContentTitle(videoTitle[0])
                         .setSmallIcon(R.drawable.ic_done)
                         .setContentText(getString(R.string.download_complete));
+
+                moveDownloadedFile(tmpFile);
             } catch (YoutubeDLException | InterruptedException e) {
                 if (BuildConfig.DEBUG) e.printStackTrace();
 
@@ -159,9 +173,52 @@ public class DownloadService extends Service {
                         .setOngoing(false)
                         .setSilent(false);
                 updateNotification(notificationThreadComplete.build(), serviceId, getApplicationContext());
-                cleanUp(serviceId);
+                cleanUp(serviceId, tmpFile);
             }
         });
         thread.start();
+    }
+
+    private void moveDownloadedFile(File tmpFile) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String downloadDir = sharedPreferences.getString("download_folder", null);
+
+        if (downloadDir != null) {
+            Uri treeUri = Uri.parse(downloadDir);
+            String docId = DocumentsContract.getTreeDocumentId(treeUri);
+            Uri destDir = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+
+            for (File file : tmpFile.listFiles()) {
+                try {
+                    Uri destUri = DocumentsContract.createDocument(
+                            getApplicationContext().getContentResolver(),
+                            destDir,
+                            "*/*",
+                            file.getName()
+                    );
+
+                    FileInputStream ins = new FileInputStream(file);
+                    OutputStream ops = getApplicationContext().getContentResolver().openOutputStream(destUri);
+
+                    IOUtils.copy(ins, ops);
+                    IOUtils.closeQuietly(ops);
+                    IOUtils.closeQuietly(ins);
+                } catch (IOException ignore) {}
+            }
+            return;
+        }
+
+        for (File file : tmpFile.listFiles()) {
+            try {
+                FileInputStream ins = new FileInputStream(file);
+
+                File finalFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), file.getName());
+                FileOutputStream ops = new FileOutputStream(finalFile);
+
+                IOUtils.copy(ins, ops);
+                IOUtils.closeQuietly(ops);
+                IOUtils.closeQuietly(ins);
+            } catch (IOException ignore) {}
+        }
     }
 }
