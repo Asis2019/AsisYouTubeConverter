@@ -1,12 +1,11 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory android:title="@string/storage">
 
         <Preference
-            app:key="download_folder"
-            app:summary="@string/download_preference_summery"
-            app:title="@string/download_folder" />
+            android:key="download_folder"
+            android:summary="@string/download_preference_summery"
+            android:title="@string/download_folder" />
 
     </PreferenceCategory>
 
