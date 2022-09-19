@@ -20,5 +20,5 @@
     <string name="download_failed">Download Failed</string>
     <string name="starting_download">Starting Download</string>
     <string name="download_canceled">Download Canceled</string>
-    <string name="default_download_path">downloads</string>
+    <string name="default_download_path">primary:Download</string>
 </resources>
