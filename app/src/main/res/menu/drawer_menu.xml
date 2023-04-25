@@ -12,6 +12,12 @@
                     app:showAsAction="ifRoom" />
 
                 <item
+                    android:id="@+id/action_update"
+                    android:icon="@drawable/ic_update"
+                    android:title="@string/update"
+                    app:showAsAction="ifRoom" />
+
+                <item
                     android:id="@+id/action_version"
                     android:icon="@drawable/ic_info"
                     android:title="@string/version"

@@ -7,10 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -25,6 +27,8 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
+import com.yausername.youtubedl_android.YoutubeDL;
+import com.yausername.youtubedl_android.YoutubeDLException;
 
 import asis.youtubeconverter.download.DownloadService;
 
@@ -59,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (itemId == R.id.action_version) {
             showVersionInfoDialog();
+        } else if (itemId == R.id.action_update) {
+            update();
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -118,5 +124,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Intent intent = new Intent(this, DownloadService.class);
         intent.putExtra("video_url", url);
         startForegroundService(intent);
+    }
+
+    private void update() {
+        try {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+            YoutubeDL.getInstance().init(this);
+            YoutubeDL.UpdateStatus status = YoutubeDL.getInstance().updateYoutubeDL(this);
+            if (status == YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE) {
+                Toast.makeText(MainActivity.this, R.string.ytdlp_already_updated, Toast.LENGTH_LONG).show();
+            } else if (status == YoutubeDL.UpdateStatus.DONE) {
+                Toast.makeText(MainActivity.this, R.string.ytdlp_updated, Toast.LENGTH_LONG).show();
+            }
+        } catch (YoutubeDLException e) {
+            Toast.makeText(MainActivity.this, R.string.ytdlp_update_failed, Toast.LENGTH_LONG).show();
+        }
     }
 }

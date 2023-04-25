@@ -164,6 +164,8 @@ public class DownloadService extends Service {
                     sendBroadcast(broadcastIntent);
 
                     notificationThreadComplete.setContentText(getString(R.string.download_failed));
+                    notificationThreadComplete.setStyle(new NotificationCompat
+                            .BigTextStyle().bigText(getString(R.string.download_failed) + getString(R.string.download_failed_description)));
                 } else if (e.getMessage() != null && e.getMessage().isEmpty()) {
                     notificationThreadComplete.setContentText(getString(R.string.download_canceled));
                 }

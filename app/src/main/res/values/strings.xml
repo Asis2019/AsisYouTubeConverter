@@ -21,4 +21,9 @@
     <string name="starting_download">Starting Download</string>
     <string name="download_canceled">Download Canceled</string>
     <string name="default_download_path">primary:Download</string>
+    <string name="update">Update yt-dlp</string>
+    <string name="download_failed_description">\nTry updating yt-dlp via the button in the app and try again.</string>
+    <string name="ytdlp_already_updated">yt-dlp libraries already up to date</string>
+    <string name="ytdlp_updated">yt-dlp libraries successfully updated</string>
+    <string name="ytdlp_update_failed">Failed to update yt-dlp libraries</string>
 </resources>
