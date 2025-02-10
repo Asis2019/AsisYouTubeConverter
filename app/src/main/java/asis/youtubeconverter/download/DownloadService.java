@@ -18,7 +18,6 @@ import androidx.core.app.ServiceCompat;
 import androidx.preference.PreferenceManager;
 
 import com.yausername.ffmpeg.FFmpeg;
-import com.yausername.youtubedl_android.DownloadProgressCallback;
 import com.yausername.youtubedl_android.YoutubeDL;
 import com.yausername.youtubedl_android.YoutubeDLException;
 import com.yausername.youtubedl_android.YoutubeDLRequest;
@@ -38,6 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import asis.youtubeconverter.BuildConfig;
 import asis.youtubeconverter.R;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function3;
 
 public class DownloadService extends Service {
     private int activeServiceId;
@@ -81,6 +82,7 @@ public class DownloadService extends Service {
             return;
         }
 
+        request.addOption("--no-check-certificate");
         request.addOption("--no-mtime");
         request.addOption("-o", tmpFolder.getAbsolutePath() + "/%(title)s.%(ext)s");
         request.addOption("-f", "ba");
@@ -123,13 +125,14 @@ public class DownloadService extends Service {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH);
         startForeground(serviceId, notification.build());
 
-        final DownloadProgressCallback callback = (progress, etaInSeconds, line) -> {
-            boolean isIndeterminate = line.contains("[ExtractAudio]") || (int) progress <= 0;
+        final Function3<Float, Long, String, Unit> callback = (progress, etaInSeconds, line) -> {
+            boolean isIndeterminate = line.contains("[ExtractAudio]") || progress <= 0;
             notification
                     .setContentTitle(videoTitle[0])
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(line))
-                    .setProgress(100, (int) progress, isIndeterminate);
+                    .setProgress(100, progress.intValue(), isIndeterminate);
             updateNotification(notification.build(), serviceId, getApplicationContext());
+            return null;
         };
 
         //Thread code
@@ -152,7 +155,7 @@ public class DownloadService extends Service {
                         .setContentText(getString(R.string.download_complete));
 
                 moveDownloadedFile(tmpFolder);
-            } catch (YoutubeDLException | InterruptedException e) {
+            } catch (YoutubeDLException | InterruptedException | YoutubeDL.CanceledException e) {
                 if (BuildConfig.DEBUG) e.printStackTrace();
 
                 notificationThreadComplete

@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
             YoutubeDL.getInstance().init(this);
-            YoutubeDL.UpdateStatus status = YoutubeDL.getInstance().updateYoutubeDL(this);
+            YoutubeDL.UpdateStatus status = YoutubeDL.getInstance().updateYoutubeDL(this, YoutubeDL.UpdateChannel._STABLE);
             if (status == YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE) {
                 Toast.makeText(MainActivity.this, R.string.ytdlp_already_updated, Toast.LENGTH_LONG).show();
             } else if (status == YoutubeDL.UpdateStatus.DONE) {
